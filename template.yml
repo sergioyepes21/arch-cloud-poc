@@ -1,0 +1,169 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+  LambdaUploadFileName:
+    Type: String
+    Default: lambda-upload-file
+
+Resources:
+  # S3 ------
+  S3UserFilesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub cloud-poc-user-files-${AWS::AccountId}-${AWS::Region}
+  S3UserFilesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3UserFilesBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Id: SSEAndSSLPolicy
+        Statement:
+          - Sid: ""
+            Effect: Allow
+            Principal:
+              AWS:
+                - !GetAtt LambdaUploadFileRole.Arn
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+            Resource: !Sub arn:aws:s3:::${S3UserFilesBucket}/*
+  # Cognito ------
+  CloudCognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: cloud-poc-user-pool
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Required: true
+        - AttributeDataType: String
+          Name: name
+          Required: true
+  CloudCognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: cloud-poc-user-pool-client
+      GenerateSecret: false
+      UserPoolId: !Ref CloudCognitoUserPool
+      ExplicitAuthFlows:
+        - ADMIN_NO_SRP_AUTH
+
+  # API Gateway ------
+  CloudPocApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Name: cloud-poc-api
+      StageName: dev
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${CloudCognitoUserPool}
+              audience:
+                - !Ref CloudCognitoUserPoolClient
+        DefaultAuthorizer: CognitoAuthorizer
+
+  # Lambda -----
+  LambdaUploadFile:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref LambdaUploadFileName
+      CodeUri: dist
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 256
+      Timeout: 6
+      Role: !GetAtt LambdaUploadFileRole.Arn
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+          S3_BUCKET: !Ref S3UserFilesBucket
+          USER_POOL_ID: !Ref CloudCognitoUserPool
+          CLIENT_ID: !Ref CloudCognitoUserPoolClient
+      Events:
+        PostUserSignup:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CloudPocApi
+            Path: /signup
+            Method: POST
+            TimeoutInMillis: 7000
+            Auth:
+              Authorizer: NONE
+        PostUserLogin:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CloudPocApi
+            Path: /login
+            Method: POST
+            TimeoutInMillis: 7000
+            Auth:
+              Authorizer: NONE
+        PostUploadFile:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CloudPocApi
+            Path: /upload-file
+            Method: POST
+            TimeoutInMillis: 7000
+            Auth:
+              Authorizer: CognitoAuthorizer
+  LambdaUploadFileRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: lambda-upload-file-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: lambda-upload-file-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub arn:aws:s3:::${S3UserFilesBucket}/*
+        - PolicyName: lambda-cognito-login-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminInitiateAuth
+                  - cognito-idp:SignUp
+                Resource: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CloudCognitoUserPool}
+        - PolicyName: lambda-cloudwatch-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${LambdaUploadFileName}:*
