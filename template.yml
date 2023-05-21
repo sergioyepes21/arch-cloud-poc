@@ -8,7 +8,22 @@ Parameters:
   LambdaUploadFileName:
     Type: String
     Default: lambda-upload-file
+  LambdaSignUpName:
+    Type: String
+    Default: lambda-signup
+  LambdaLoginName:
+    Type: String
+    Default: lambda-login-file
+  LambdaVerifyCodeName:
+    Type: String
+    Default: lambda-verify-code
 
+Globals:
+  Function:
+    Handler: index.handler
+    Runtime: nodejs18.x
+    MemorySize: 256
+    Timeout: 6
 Resources:
   # S3 ------
   S3UserFilesBucket:
@@ -85,37 +100,13 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Ref LambdaUploadFileName
-      CodeUri: dist
-      Handler: index.handler
-      Runtime: nodejs18.x
-      MemorySize: 256
-      Timeout: 6
+      CodeUri: dist/backend/upload-file
       Role: !GetAtt LambdaUploadFileRole.Arn
       Environment:
         Variables:
           ENVIRONMENT: !Ref Environment
           S3_BUCKET: !Ref S3UserFilesBucket
-          USER_POOL_ID: !Ref CloudCognitoUserPool
-          CLIENT_ID: !Ref CloudCognitoUserPoolClient
       Events:
-        PostUserSignup:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref CloudPocApi
-            Path: /signup
-            Method: POST
-            TimeoutInMillis: 7000
-            Auth:
-              Authorizer: NONE
-        PostUserLogin:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref CloudPocApi
-            Path: /login
-            Method: POST
-            TimeoutInMillis: 7000
-            Auth:
-              Authorizer: NONE
         PostUploadFile:
           Type: HttpApi
           Properties:
@@ -167,3 +158,166 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${LambdaUploadFileName}:*
+
+  LambdaSignUp:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref LambdaSignUpName
+      CodeUri: dist/backend/signup
+      Role: !GetAtt LambdaSignUpRole.Arn
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+          USER_POOL_ID: !Ref CloudCognitoUserPool
+          CLIENT_ID: !Ref CloudCognitoUserPoolClient
+      Events:
+        PostUserSignup:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CloudPocApi
+            Path: /sign-up
+            Method: POST
+            TimeoutInMillis: 7000
+            Auth:
+              Authorizer: NONE
+
+  LambdaSignUpRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: lambda-sign-up-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: lambda-cognito-sign-up-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:SignUp
+                Resource: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CloudCognitoUserPool}
+        - PolicyName: lambda-cloudwatch-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${LambdaSignUpName}:*
+
+  LambdaLogin:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref LambdaLoginName
+      CodeUri: dist/backend/login
+      Role: !GetAtt LambdaLoginRole.Arn
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+          USER_POOL_ID: !Ref CloudCognitoUserPool
+          CLIENT_ID: !Ref CloudCognitoUserPoolClient
+      Events:
+        PostUserLogin:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CloudPocApi
+            Path: /login
+            Method: POST
+            TimeoutInMillis: 7000
+            Auth:
+              Authorizer: NONE
+  LambdaLoginRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: lambda-login-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: lambda-cognito-login-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminInitiateAuth
+                Resource: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CloudCognitoUserPool}
+        - PolicyName: lambda-cloudwatch-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${LambdaLoginName}:*
+
+  LambdaVerifyCode:
+      Type: AWS::Serverless::Function
+      Properties:
+        FunctionName: !Ref LambdaVerifyCodeName
+        CodeUri: dist/backend/verify-code
+        Role: !GetAtt LambdaVerifyCodeRole.Arn
+        Environment:
+          Variables:
+            ENVIRONMENT: !Ref Environment
+            USER_POOL_ID: !Ref CloudCognitoUserPool
+            CLIENT_ID: !Ref CloudCognitoUserPoolClient
+        Events:
+          PostVerifyCodeLogin:
+            Type: HttpApi
+            Properties:
+              ApiId: !Ref CloudPocApi
+              Path: /verify-code
+              Method: POST
+              TimeoutInMillis: 7000
+              Auth:
+                Authorizer: NONE
+  LambdaVerifyCodeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: lambda-verifiy-code-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: lambda-cognito-verify-code-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:ConfirmSignUp
+                Resource: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CloudCognitoUserPool}
+        - PolicyName: lambda-cloudwatch-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${LambdaVerifyCodeName}:*

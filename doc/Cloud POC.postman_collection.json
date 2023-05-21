@@ -1,0 +1,169 @@
+{
+	"info": {
+		"_postman_id": "67652960-2a1b-4b3d-abee-80f353c81cf4",
+		"name": "Cloud POC",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "11389962"
+	},
+	"item": [
+		{
+			"name": "Login",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"225d8a80-fecb-4ba0-8bb5-6e0344e00120\",\n    \"password\": \"!1Aaaaaa\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{CloudPocApiEndpoint}}/{{Stage}}/login",
+					"host": [
+						"{{CloudPocApiEndpoint}}"
+					],
+					"path": [
+						"{{Stage}}",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sign Up",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"sa.yepes@uniandes.edu.co\",\n    \"name\": \"Uniandes Sergio Y\",\n    \"password\": \"!1Aaaaaa\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{CloudPocApiEndpoint}}/{{Stage}}/sign-up",
+					"host": [
+						"{{CloudPocApiEndpoint}}"
+					],
+					"path": [
+						"{{Stage}}",
+						"sign-up"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify Code",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"225d8a80-fecb-4ba0-8bb5-6e0344e00120\",\n    \"code\": \"993691\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{CloudPocApiEndpoint}}/{{Stage}}/verify-code",
+					"host": [
+						"{{CloudPocApiEndpoint}}"
+					],
+					"path": [
+						"{{Stage}}",
+						"verify-code"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Upload File",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJraWQiOiJrSGkzY0gxOWNXbHlpZ3l0R0d0Z0ZJUERqekNzaURXaVBtT1ppWlZBSjFzPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIyMjVkOGE4MC1mZWNiLTRiYTAtOGJiNS02ZTAzNDRlMDAxMjAiLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0xLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMV9UeDNJNnJOOTIiLCJjbGllbnRfaWQiOiIzYmp2Z3J0b2wxbHN0dm9wbDU0NnJlZ3BrMyIsIm9yaWdpbl9qdGkiOiIwYWI2ZmQwZC0wZTZlLTQ1NWUtOWFiNC02YmUyYWU5YzVkMjUiLCJldmVudF9pZCI6ImM2YTQ3MTg0LTUyMDgtNDBkNC04MDcwLWFhMjA3ZjRmNTA5NCIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiYXdzLmNvZ25pdG8uc2lnbmluLnVzZXIuYWRtaW4iLCJhdXRoX3RpbWUiOjE2ODQ2ODUyODcsImV4cCI6MTY4NDY4ODg4NywiaWF0IjoxNjg0Njg1Mjg3LCJqdGkiOiJjMzMwZDNmMy1mNmRhLTQxZjctOTVjOC1jZjI4OWI2ZTk0OTMiLCJ1c2VybmFtZSI6IjIyNWQ4YTgwLWZlY2ItNGJhMC04YmI1LTZlMDM0NGUwMDEyMCJ9.KQ_WKMlj02QKSJLtyYQ0d8tuQFcPY-uhRwzg17qYB2UPqQgYg1uIQ8mtp2TdF0JRBQVMw4ifDhK1AkVobwEUitzhoaeGb3L1Hdf6ayFuQ6vTvMReBtUxvNzDKl56C_0tVonwNt_oy0L6fF_dcKlOKxLbneIMKR24fETNy18VSD5E56K_gzzix0mHUhJeyz5c0W9kG8PAOUO-7tc44JWESGuQH6vvBpe4DPSsZDB2JGHDQK5uApgPhnNG00xacGyUu0knj6MbQglg1QjOt8BOJ3m8RmQmAkpJ423-4S-apr0CSXUGq2tt--_94c0VhgdeNDN_JIW6j5o7IaDr7S39XA",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"fileName\": \"test1.pdf\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{CloudPocApiEndpoint}}/{{Stage}}/upload-file",
+					"host": [
+						"{{CloudPocApiEndpoint}}"
+					],
+					"path": [
+						"{{Stage}}",
+						"upload-file"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "CloudPocApiEndpoint",
+			"value": "https://98iwhy8gi4.execute-api.us-east-1.amazonaws.com",
+			"type": "string"
+		},
+		{
+			"key": "Stage",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
